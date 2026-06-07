@@ -1,5 +1,4 @@
-﻿// 허재윤
-// AI 코드 참고
+﻿// AI 코드 참고
 // 출처: ChatGPT(OpenAI)를 활용하여 Flutter 반려견 급여 재고 관리 앱 구현에 도움을 받음.
 
 import 'dart:convert';
@@ -77,9 +76,12 @@ class FeedItem {
     return const Color(0xff329b67);
   }
 
-  double get recommendedDaily => weight * 30;
+  double get recommendedDaily => unit == 'g' ? weight * 30 : 0;
 
   String get feedingAssessment {
+    if (unit != 'g') {
+      return 'Feeding assessment only applies to g unit.';
+    }
     final recommended = recommendedDaily;
     if (daily >= recommended * 1.1) {
       return '과다 급여';
@@ -341,7 +343,8 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
   Widget pageShell(Widget child) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 390),
+        // Reduced maxWidth for better fit on iPhone screens
+        constraints: const BoxConstraints(maxWidth: 375),
         child: SafeArea(
           minimum: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           child: child,
@@ -525,6 +528,11 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
             child: const Text('주사료뿐 아니라 영양제, 간식, 습식캔도 등록할 수 있어요. 단위와 하루 사용량 기준으로 소진일을 계산합니다.'),
           ),
           const SizedBox(height: 20),
+          TextField(
+            controller: petNameController,
+            decoration: const InputDecoration(labelText: '강아지 이름', hintText: '예: 무무'),
+          ),
+          const SizedBox(height: 12),
           const Text('카테고리', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           Wrap(
@@ -548,11 +556,6 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
           ),
           const SizedBox(height: 20),
           TextField(
-            controller: petNameController,
-            decoration: const InputDecoration(labelText: '강아지 이름', hintText: '예: 무무'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
             controller: itemNameController,
             decoration: const InputDecoration(labelText: '품목명', hintText: '예: 로얄캐닌 미니 어덜트'),
           ),
@@ -567,20 +570,7 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedUnit,
-                  items: unitLabels.map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedUnit = value;
-                      });
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: '단위'),
-                ),
-              ),
+              // unit moved below next to 남은 양/하루 사용량
             ],
           ),
           const SizedBox(height: 12),
@@ -599,6 +589,22 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
                   controller: dailyController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(labelText: '하루 사용량'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 120,
+                child: DropdownButtonFormField<String>(
+                  value: _selectedUnit,
+                  items: unitLabels.map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedUnit = value;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: '단위'),
                 ),
               ),
             ],
@@ -665,6 +671,10 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
       purchaseDate: _purchaseDate,
     );
 
+    final recommendedDailyText = item.unit == 'g'
+        ? '${item.recommendedDaily.toStringAsFixed(0)}g'
+        : '${(item.weight * 30).toStringAsFixed(0)}g (g-based)';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -677,7 +687,7 @@ class _DogFoodHomePageState extends State<DogFoodHomePage> {
           _resultRow('남은 일수', '${item.remainDaysRounded}일'),
           _resultRow('예상 소진일', item.formattedExpectedEndDate),
           _resultRow('재고 상태', item.stockStatus),
-          _resultRow('권장 급여량', '${item.recommendedDaily.toStringAsFixed(0)}g'),
+          _resultRow('권장 급여량', recommendedDailyText),
           _resultRow('현재 급여량', '${item.daily.toStringAsFixed(0)}${item.unit}'),
           _resultRow('급여 적정성', item.feedingAssessment),
           const SizedBox(height: 12),
