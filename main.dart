@@ -1,4 +1,5 @@
-﻿// AI 코드 참고
+﻿// 허재윤
+// AI 코드 참고
 // 출처: ChatGPT(OpenAI)를 활용하여 Flutter 반려견 급여 재고 관리 앱 구현에 도움을 받음.
 
 import 'dart:convert';
