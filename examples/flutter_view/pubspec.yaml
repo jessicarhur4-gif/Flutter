@@ -9,6 +9,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.0.24
 
 
 flutter:
